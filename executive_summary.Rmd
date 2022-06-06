@@ -1,0 +1,63 @@
+---
+title: "Public Opinion in the Andean Community"
+subtitle: "Executive Summary"
+author: "Xamantha Laos Cueva"
+date: "12/8/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: "tango"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The Exploratory Data Analysis (EDA) was performed on a data set about public opinions of people in the Andean community (Peru, Colombia, Ecuador, and Bolivia) regarding the major problems that the countries were from 2006 to 2014. The EDA focused on four criteria of study **(Big Indicators, Crime, Corruption, and Democracy)**, and on an analysis of demographics of people surveyed.
+
+The purpose of the investigation was to find out:
+
+-   whether the collection of data minimized bias by surveying people with demographics that were representative of the general population.
+
+-   how people's perceptions regarding the four criteria of study changed within the Andean community according to country, demographics, and time.
+
+-   how variables interacted with each other on forming people's opinions about their countries' issues.
+
+**Source:** For this project,the data set titled "Latin America Public Opinion Project (LAPOP), 2004 - 2015 [28 COUNTRIES]" collected by "The Latino American Public Opinion Project" at Vanderbilt University and retrieved from ICPSR (<https://www.icpsr.umich.edu/web/ICPSR/studies/36562>) was used.
+
+## Key Insights
+
+### Role of Race on Perception of Main Issue
+
+The reader can easily identify that the lightest square is such where **Race: Black** and **Issue: Unemployment** intersect. This means that Black people are the racial group with the highest concentration of their demographic group in one specific issue, this being unemployment.
+
+This finding arises concerns on why Black people are disproportionately worried about unemployment and to what extent systemic racism is limiting them from finding jobs. The reason this is insightful is that, even though in the USA it would not be an interesting discovery (because it is a well-known fact), in Latin America, the racial diaspora is understood differently. Thus, many people would state that Latin America deals with colorism in a greater extent than racism. However, the plot shows that it is only Black people-and not other groups differently than white-who are disproportionately worried about the same issue.
+
+![](images/Screen%20Shot%202021-12-09%20at%205.49.42%20PM.png)
+
+### Crime Increasingly Perceived as Main Issue
+
+The visualization below shows the number of people from 2008 to 2014 who consider crime to be the main issue facing the country. Across all countries, the number has been increasing which means the people in the Andean community are likely to feel more insecure as in their countries as time passes by. This puts a higher emphasis on authorities to focus their policy-making on providing services and passing laws that combat crime.
+
+Additionally, Peru shows the higher number of people concerned about crime as the main issue in every year studied. Considering that Peru was the country with the highest percentage of victims of crime during the past 12 months, it is logical that Peruvians feel more insecure than other countries in the region.
+
+![](images/Screen%20Shot%202021-12-09%20at%205.47.44%20PM.png)
+
+### Corruption and Connection with Respect for Political Institutions
+
+The boxplot below shows that the degree of respect to political institutions is strongly correlated with the extent of agreement that the current administration combats crime. The surprising part of this finding is not the fact itself, but the strength of the correlation of both variables since the reader can appreciate the step-like shape of the plot. Even though causation cannot be established, this insight could still be useful for politicians attempting to restore the trust with their citizens. Moreover, the fact that most people are in the lower end of agreeing that the administration combats corruption speaks to a systematic problem of corruption in the Andean community.
+
+![](images/Screen%20Shot%202021-12-09%20at%205.50.39%20PM-01.png)
+
+## Recommendations
+
+From the insights in the plots, it is advisable to take action and:
+
+-   investigate what the systemic barriers for black people to enter the job market are and how to tackle them.
+
+-   reinforce policies that combat crime and find out what the demographics of people who are the most concerned about crime within each country are to provide targeted and efficient solutions.
+
+-   systematically approach corruption by identifying levels of corruption within a country (towns, municipalities, country as whole) and produce specific laws to target them. Be more vocal about current actions from the administration to combat corruption to increase transparency (aiming to increase respect) with the public.

@@ -1,0 +1,2062 @@
+---
+title: "Public Opinion in the Andean Community"
+subtitle: "Long Form EDA - Final Project"
+author: "Xamantha Laos Cueva"
+date: "12/8/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: "tango"
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE
+  )
+
+library(tidyverse)
+library(gganimate)
+library(janitor)
+library(readr)
+library(skimr)
+library(shiny)
+library(patchwork)
+library(sf)
+library(rgeos)
+library(rnaturalearth) 
+library(rnaturalearthdata)
+library(ggspatial)
+library(GGally)
+library(corrplot)
+library(ggradar)
+library(scales)
+
+```
+
+## Introduction
+
+In this document, an Exploratory Data Analysis (EDA) was performed on a data set about public opinions of people in the Andean community (Peru, Colombia, Ecuador, and Bolivia) regarding the major problems that the countries are facing during a specific span of time (8 - 10 years)-gathered through surveys. The original data set is made up of 266 variables and 236754 observations; however, this EDA dealt with a subset of that data.
+
+An EDA is the process of performing an investigation on a data set to discover patterns, anomalies, and to test hypothesis; which is usually aided by visualizations (<https://towardsdatascience.com/exploratory-data-analysis-8fc1cb20fd15>). Thus, this document's purpose was to carry such operations on the data set to provide answers to questions such as:
+
+-   Is the data collection biased by not including enough diversity?
+
+-   Does race play a role in people's perception of the main issue the country is facing in the Andean community?
+
+-   What is the median number of times that someone has been victim of crime in the countries?
+
+-   Do main concerns differ by country?
+
+-   Is there a correlation between people's concern about corruption and trust to political parties?
+
+-   Have people become more concerned about crime over time, etc?
+
+The EDA is focused on four criteria of study (Big Indicators, Crime, Corruption, and Democracy). The structure is broken down in:
+
+-   Univariate Analysis: In-depth study of the distribution of demographic variables to identify bias and the distribution of variable related to the criteria of study.
+
+-   Bivariate Analysis: An study of how two variables interact with each other to discover how variables related to the main criteria change according to demographics, or according to other variables. '
+
+-   Spece-Temporal Analysis: An analysis of how a variable has changed throughout time and by country to spot geographical differences/similarities within the Andean communities and trends over time.
+
+-   Multivariate Analysis: Studying more than three variables at the same time to generate insights about one or more criteria of study.
+
+Conclusion can be found at the bottom of the document and for a compact version of this document the reader can refer to the Executive Summary file.
+
+**Considerations:**
+
+The options for some demographic categories studied in this data set were directly taken from the options asked in the original surveys. This document acknowledges that the options do not fully reflect the identification of some readers. The limitations of demographic options presented in this EDA are not a reflection of the author's views, but a reflection of a lack of diversity in the question's of the original survey.
+
+Given that the original survey deals with race, it is important to keep in mind that the racial diaspora in Latin America differs in some aspects to the treatment of race in the USA. Thus, language surrounded race that is sensitive in the USA is not necessarily perceived as such in Latin America.
+
+This EDA is likely to encounter accessibility issues. There is one version is process for people with visual impairments whose link will be attached here once it is released.
+
+## About the data
+
+**Source:** For this project,the data set titled "Latin America Public Opinion Project (LAPOP), 2004 - 2015 [28 COUNTRIES]" collected by "The Latino American Public Opinion Project" at Vanderbilt University and retrieved from ICPSR (<https://www.icpsr.umich.edu/web/ICPSR/studies/36562>) was used.
+
+**Composition of the Data Set:** The data set has 266 variables and 236754 observations. Due to its large size, functions such as "glimpse()" or "str()" were not used. In the original data set, there were only two character variables ("IDNUM_14": Number of questionnaire - numbers written as characters, and "FECHA": date.) Below, the reader can see the first 10 observations with some of the variables.
+
+```{r, comment=NA}
+raw_data <- read_tsv("Data Collected/Raw Data.tsv")
+head(raw_data, 10)
+
+```
+
+**Codebook:** The original data set is very untidy. Since the EDA will not work over all the data set, a codebook for all 266 variables is not provided. Therefore, for any questions about the data set, please check the folder "Data Information" where the file "Breakdown of Questions" provides in depth detail about the original data set.
+
+**Other:** For code and comments regarding the original data set explorations, check the R script "Exploring Raw Data."
+
+## EDA
+
+### Tidying data
+
+#### Data Set Issues:
+
+Some of the main problems with the original data set are:
+
+-   The data set has observations that are irrelevant for the purpose of the EDA. E.g. the EDA focuses on Andean Countries, but the original data set covers all countries in Latin America.
+-   There are too many variables: Some of them are irrelevant (e.g. repeated variables). Similarly, even though there might be many that are interesting, it is necessary to narrow them down to not sacrifice quality for quantity.
+-   The names of the variables are not informative or are in a different language. Some of the names of the variables are in Spanish (e.g. "PAIS"), which would make it harder for English speakers to understand the EDA (given that it is written in English), and some other variables have names that are not intuitive (e.g. "Q1": whether the surveyed person is Male or Female).
+
+To solve this issues and others, the process of tidying the data is shown below.
+
+#### Filtering by Countries:
+
+The data set was filtered by all countries of interest; which are Peru, Bolivia, Ecuador, and Colombia. The country variable is called "PAIS" and the countries are represented by the following numbers: Peru (11), Bolivia (10), Ecuador (9), and Colombia (8). The tables below show the frequency of each observation in the variable "PAIS" before and after filtering by countries. Additionally, now the data set has 49596 observations and 266 variables (using "str()"). Before filtering, table of frequency for variable "PAIS:"
+
+```{r, comment=NA}
+#table of frequency of variable PAIS
+table(raw_data$PAIS)
+```
+
+After filtering, table of frequency for variable "PAIS:"
+
+```{r, comment=NA}
+#filtering by relevant countries
+data_countries_interest <- raw_data %>%
+  filter(PAIS %in% c(11, 10, 9, 8))
+
+#table of frequency of variable PAIS
+table(data_countries_interest$PAIS)
+```
+
+#### Subsetting by Variables of Interest:
+
+Not all the 266 variables are relevant, and using all of them for an EDA would sacrifice specificity. Therefore, each variable in the questionnaire was analyzed and only relevant variables were selected (e.g. selected variable about whether a person trusts a president, but leave variable that indicates whether a person trusts a mayor). Since these are not the final variables used for the EDA (further subsetting later), there is no a specific codebook yet, but the reader can find information about each variable in the general codebook of the original survey. Below, the reader can see that the data set now has 49596 observations and 53 variables.
+
+```{r, comment = NA}
+#subsetting data by relevant variables
+data_subset_1 <- data_countries_interest %>%
+  select(c(PAIS, WAVE, YEAR, ESTRATOSEC, UR, TAMANO, IDIOMAQ, Q1, LS3,
+           A4, SOCT2, IDIO2, CP5, L1, PROT3, JC10, JC13, JC15A, VIC1EXT,
+           VIC1EXTA, VIC1HOGAR, PESE1, PESE2, AOJ12, B2, B4, B6, B10A, B12,
+           B13, B18, B21, B21A, B21, B47A, N9, N11, N15, M1, SD2NEW2, SD3NEW2,
+           SD6NEW2, ROS4, ING4, MIL7, PN4, EXC2, EXC7, POL1, ED, Q10NEW_12, 
+           Q10NEW_14, Q10D, ETID))
+
+#structure of data 
+str(data_subset_1)
+```
+
+After analyzing each variable to check whether any of them could cause major troubles later on, it was noticed that both **Q10NEW_14** and **Q10NEW_12** measure monthly household income in dollars. However, due to the fact that living costs vary from country to country, this variable could lead to misleading results in the future. Even though there are solutions to address this problem, considering the number of variables in the data set, it was decided that it was better to get rid of both variables. Another issue noticed was that the variable **"WAVE"** seemed to have the same values as the variable "YEAR."
+
+```{r, comment = NA}
+#checking first 10 observations of year and wave
+data_subset_1 %>%
+  select(c(YEAR, WAVE)) %>%
+  head(10)
+
+```
+
+After checking is both columns were equal, the hypothesis was confirmed. Finally, the variable **ESTRATOSEC** (size of municipality) was considered to be not relevant given that there was other demographic information (sex, country, urbanization, etc.) that was more useful. After getting rid of such variables, the data set had 49 variables and 49596 observations.
+
+```{r, comment = NA}
+#getting rid of variables 
+data_subset_2 <- data_subset_1 %>%
+  select(-c(Q10NEW_12, Q10NEW_14, WAVE, ESTRATOSEC))
+
+#structure of data 
+str(data_subset_2)
+
+```
+
+#### Accounting for Irregularities with Data Collection:
+
+Given that the collection of data was performed during a long time span and in different countries, it was expected that there could be irregularities such as:
+
+-   No observations collected in all countries for the same years, etc.
+
+-   Uneven number of observations collected among countries. The values below show the unique observations for the variable "YEAR" for each country. <br> Peru:
+
+```{r, comment = NA}
+#checking collection of data in Peru through out the years 
+peru_subset <- data_subset_2 %>%
+  filter(PAIS == 11)
+unique(peru_subset$YEAR)
+
+```
+
+Colombia:
+
+```{r, comment = NA}
+#checking collection of data in Colombia through out the years 
+colombia_subset <- data_subset_2 %>%
+  filter(PAIS == 8)
+unique(colombia_subset$YEAR)
+
+```
+
+Ecuador:
+
+```{r, comment = NA}
+#checking collection of data in Ecuador through out the years 
+ecuador_subset <- data_subset_2 %>%
+  filter(PAIS == 9)
+unique(ecuador_subset$YEAR)
+
+```
+
+Bolivia:
+
+```{r, comment = NA}
+#checking collection of data in Bolivia through out the years 
+bolivia_subset <- data_subset_2 %>%
+  filter(PAIS == 10)
+unique(bolivia_subset$YEAR)
+
+```
+
+The values above show that, in Peru, unlike the other countries, no data was collected during 2004. Therefore, I decided that I would only work with the years: 2006, 2008, 2010, 2012, and 2014. After filtering by years that are not 2004, the number of observations was 42045 with 49 variables, as show below.
+
+```{r, comment = NA}
+#filtering by years that are not equal to 2004 
+data_subset_2 <- data_subset_2 %>%
+  filter(YEAR != 2004)
+
+str(data_subset_2)
+
+```
+
+The next issue was to check whether the data had been unevenly recorded across countries because this could lead to potential issues. For example, later on a visualization could show that there are twice as many people who trust their president in Ecuador compared to Bolivia, but this would be a consequence of the fact that there were twice as many observations recorded in Bolivia. The following plot shows how many observations were recorded per country in a given year. It can be seen that Bolivia had about twice as many observations than Peru and Colombia in every year. Similarly, Ecuador had the same trend in 2006, 2008, and 2010.
+
+```{r, comment=NA}
+data_subset_2 %>%
+  group_by(PAIS, YEAR) %>%
+  count() %>%
+  ggplot(mapping = aes(x = as.character(YEAR), 
+                       y = n,
+                       fill = as.character(PAIS))) +
+  scale_fill_manual(name = "Country",
+                      labels = c("Bolivia", "Peru", "Colombia", "Ecuador"), 
+                      values = c("#1E4367","#613D76",
+                               "#973539","#65A59D")) +
+  geom_col(position = position_dodge2(), 
+           width = 0.7) +
+  labs(x = "Year of Survey", 
+       y = "Number of Surveys", 
+       title = "Number of Surveys Collected per Coutry in a Given Year") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.margin = unit(c(.3,0,0,0), 
+                           "in")) 
+```
+
+<br><br> To account for this, a sample of every country-year combination was taken, so further analysis would be more comparable. The size of the sample was determined by the minimum country-year combination to take advantage of considering as many observations possible while still having comparable observations. The minimum country-year combination of number of observations was 1489, which corresponds to Ecuador in 2014. This can be verified below.
+
+```{r}
+#checking number of observation for country-year
+data_subset_2 %>%
+  group_by(PAIS, YEAR) %>%
+  count() 
+
+```
+
+The results of taking a sample of size 1489 per country-year combination are shown below.
+
+```{r, comment=NA}
+#taking sample
+data_sample_equal <- data_subset_2 %>%
+  group_by(PAIS, YEAR) %>%
+  sample_n(1489)
+
+#checking number of observation for country-year after sample
+data_sample_equal %>%
+  group_by(PAIS, YEAR) %>%
+  count() 
+
+#visualization
+data_sample_equal %>%
+  group_by(PAIS, YEAR) %>%
+  count() %>%
+  ggplot(mapping = aes(x = as.character(YEAR), 
+                       y = n,
+                       fill = as.character(PAIS))) +
+  scale_fill_manual(name = "Country",
+                    labels = c("Bolivia", "Peru", "Colombia", "Ecuador"), 
+                    values = c("#1E4367","#613D76",
+                               "#973539","#65A59D")) +
+  geom_col(position = position_dodge2(), 
+           width = 0.7) +
+  labs(x = "Year of Survey", 
+       y = "Number of Surveys", 
+       title = "Number of Surveys Collected per Coutry in a Given Year", 
+       subtitle = "Sample : 1489") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"))
+
+```
+
+<br><br> The data set now has 29,780 observations and 49 variables.
+
+```{r, comment=NA}
+#ungrouping 
+data_sample_equal <- data_sample_equal %>% ungroup()
+
+#structure of data set
+str(data_sample_equal)
+
+#saving data set
+write_csv(data_sample_equal, 
+          file = "Data sets made in process/sample_of_data_andean")
+
+```
+
+#### Adjusting values in variables:
+
+The sample had 49 variables and all of them were numeric due to how the data was collected (numbers represented categorical variables). Although for some variables the numeric type made sense(ranking, extent to which someone agrees from 1-7, etc.), there were others were categorical values were more appropriate. Thus, most variables were recoded after careful consideration. Below, the reader can see the results for the first ten observations before and after recoding (personal criteria was employed to determine where shifting to a categorical variable would be better; however, this was subject to change throughout the EDA). <br> Before:
+
+```{r, comment=NA}
+#before recoding 
+data_sample_equal %>%
+  head(10)
+
+#recoding 
+data_edited <- data_sample_equal %>%
+  mutate(PAIS = recode(PAIS, 
+                       "8" = "Colombia", 
+                       "9" = "Ecuador", 
+                       "10" = "Bolivia",
+                       "11" = "Peru")) %>%
+  mutate(UR = recode(UR, 
+                     "1" = "Urban", 
+                     "2" = "Rural")) %>%
+  mutate(IDIOMAQ = recode(IDIOMAQ, 
+                     "1" = "Spanish", 
+                     "902" = "Other", 
+                     "1002" = "Other", 
+                     "1003" = "Other",
+                     .default = NA_character_)) %>%
+  mutate(Q1 = recode(Q1, 
+                     "1" = "Male", 
+                     "2" = "Female")) %>%
+  #character for now
+  mutate(LS3 = recode(LS3, 
+                      "1" = "Very satisfied", 
+                      "2" = "Somewhat satisfied", 
+                      "3" = "Somewhat dissatisfied", 
+                      "4" = "Very dissatisfied", 
+                      "5" = "Don't know", 
+                      "6" = "No answer",
+                      .missing = "No answer", 
+                      .default = "No answer")) %>%
+  mutate(A4 = recode(A4, 
+                     "30" = "Armed conflict", 
+                     "15" = "Bad government", 
+                     "13" = "Corruption", 
+                     "09" = "Credit (lack of)", 
+                     "05" = "Crime", 
+                     "25" = "Discrimination", 
+                     "11" = "Drug addiction/consumption", 
+                     "12" = "Drug trafficking", 
+                     "01" = "Economy (problems with)", 
+                     "21" = "Education (quality, lack of)", 
+                     "24" = "Electricity (lack of)", 
+                     "10" = "Environment", 
+                     "26" = "External debt",
+                     "32" = "Forced displacement of people", 
+                     "14" = "Gangs", 
+                     "22" = "Health service (lack of)", 
+                     "55" = "Housing", 
+                     "61" = "Human right violations", 
+                     "88" = "Don't know", 
+                     "58" = "Inequality", 
+                     "02" = "Inflation", 
+                     "31" = "Kidnappings", 
+                     "07" = "Land to farm (lack of)",
+                     "23" = "Malnutrition", 
+                     "16" = "Migrations", 
+                     "59" = "Politicians", 
+                     "06" = "Popular protests", 
+                     "20" = "Over population", 
+                     "04" = "Poverty", 
+                     "18" = "Roads in poor condition",
+                     "27" = "Security (lack of)", 
+                     "33" = "Terrorism", 
+                     "60" = "Transpotation (problems with)", 
+                     "03" = "Unemployment", 
+                     "57" = "Violence", 
+                     "17" = "War against terrorism", 
+                     "19" = "Water (lack of)", 
+                     "70" = "Other", 
+                     "98" = "No answer", 
+                     .missing = "No answer", 
+                     .default = "No answer")) %>%
+  mutate(SOCT2 = recode(SOCT2, 
+                        "1" = "Better", 
+                        "2" = "Same", 
+                        "3" = "Worse", 
+                        "88" = "Don't know", 
+                        "98" = "No answer")) %>%
+  mutate(IDIO2 = recode(IDIO2, 
+                        "1" = "Better", 
+                        "2" = "Same", 
+                        "3" = "Worse", 
+                        "88" = "Don't know", 
+                        "98" = "No answer")) %>%
+  mutate(CP5 = recode(CP5, 
+                      "1" = "Once a week", 
+                      "2" = "Once or twice a month", 
+                      "3" = "Once or twice a year", 
+                      "4" = "Never", 
+                      "88" = "Don't know", 
+                      "98" = "No answer", 
+                      .missing = "No answer")) %>%
+  #L1 makes sense as numeric
+  mutate(PROT3 = recode(PROT3, 
+                        "1" = "Yes", 
+                        "2" = "No", 
+                        "88" = "Don't know", 
+                        "98" = "No answer", 
+                        .default = "No answer", 
+                        .missing = "No answer")) %>%
+  mutate(JC10 = recode(JC10, 
+                       "1" = "Justified", 
+                       "2" = "Not justified", 
+                       "88" = "Don't know", 
+                       "98" = "No answer", 
+                       .default = "No answer", 
+                       .missing = "No answer")) %>%
+  mutate(JC13 = recode(JC13, 
+                       "1" = "Justified", 
+                       "2" = "Not justified", 
+                       "88" = "Don't know", 
+                       "98" = "No answer", 
+                       .default = "No answer", 
+                       .missing = "No answer")) %>%
+  mutate(JC15A = recode(JC15A, 
+                       "1" = "Justified", 
+                       "2" = "Not justified", 
+                       "88" = "Don't know", 
+                       "98" = "No answer", 
+                       .default = "No answer", 
+                       .missing = "No answer")) %>%
+  mutate(VIC1EXT = recode(VIC1EXT, 
+                       "1" = "Yes", 
+                       "2" = "No", 
+                       "88" = "Don't know", 
+                       "98" = "No answer", 
+                       .default = "No answer", 
+                       .missing = "No answer")) %>%
+  #VICEXTA might make more sense as numeric
+  mutate(VIC1HOGAR = recode(VIC1HOGAR, 
+                          "1" = "Yes", 
+                          "2" = "No", 
+                          "88" = "Don't know", 
+                          "98" = "No answer", 
+                          .default = "No answer", 
+                          .missing = "No answer")) %>%
+  mutate(PESE1 = recode(PESE1, 
+                            "1" = "Higher", 
+                            "2" = "Same", 
+                            "3" = "Lower",
+                            "88" = "Don't know", 
+                            "98" = "No answer", 
+                            .default = "No answer", 
+                            .missing = "No answer")) %>%
+  mutate(PESE2 = recode(PESE2, 
+                        "1" = "Higher", 
+                        "2" = "Same", 
+                        "3" = "Lower",
+                        "88" = "Don't know", 
+                        "98" = "No answer", 
+                        .default = "No answer", 
+                        .missing = "No answer")) %>%
+  mutate(AOJ12 = recode(AOJ12, 
+                        "1" = "A lot", 
+                        "2" = "Some", 
+                        "3" = "Little",
+                        "4" = "None",
+                        "88" = "Don't know", 
+                        "98" = "No answer", 
+                        .default = "No answer", 
+                        .missing = "No answer")) %>%
+  #leave B#, N# as they are because it asks about extent, 
+  #better numerical
+  #leave M1 as numerical because it is a rating
+  mutate(SD2NEW2 = recode(SD2NEW2, 
+                      "1" = "Very satisfied", 
+                      "2" = "Somewhat satisfied", 
+                      "3" = "Dissatisfied", 
+                      "4" = "Very dissatisfied", 
+                      "88" = "Don't know", 
+                      "99" = "Don't use",
+                      "98" = "No answer",
+                      .missing = "No answer", 
+                      .default = "No answer")) %>%
+  mutate(SD3NEW2 = recode(SD3NEW2, 
+                          "1" = "Very satisfied", 
+                          "2" = "Somewhat satisfied", 
+                          "3" = "Dissatisfied", 
+                          "4" = "Very dissatisfied", 
+                          "88" = "Don't know", 
+                          "99" = "Don't use",
+                          "98" = "No answer",
+                          .missing = "No answer", 
+                          .default = "No answer")) %>%
+  mutate(SD6NEW2 = recode(SD6NEW2, 
+                          "1" = "Very satisfied", 
+                          "2" = "Somewhat satisfied", 
+                          "3" = "Dissatisfied", 
+                          "4" = "Very dissatisfied", 
+                          "88" = "Don't know", 
+                          "99" = "Don't use",
+                          "98" = "No answer",
+                          .missing = "No answer", 
+                          .default = "No answer")) %>%
+  #leave ROS4, ING4, and MIL7 as they are because it asks about extent, 
+  #better numerical
+  mutate(PN4 = recode(PN4, 
+                          "1" = "Very satisfied", 
+                          "2" = "Somewhat satisfied", 
+                          "3" = "Dissatisfied", 
+                          "4" = "Very dissatisfied", 
+                          "88" = "Don't know", 
+                          "98" = "No answer",
+                          .missing = "No answer", 
+                          .default = "No answer")) %>%
+  mutate(EXC2 = recode(EXC2, 
+                       "0" = "No", 
+                       "1" = "Yes", 
+                       .missing = "No answer/no contact", 
+                       .default = "No answer/no contact")) %>%
+  mutate(EXC7 = recode(EXC7, 
+                       "1" = "Very common", 
+                       "2" = "Common", 
+                       "3" = "Uncommon", 
+                       "4" = "Very uncommon",
+                       "88" = "Don't know", 
+                       "98" = "No answer",
+                       .missing = "No answer", 
+                       .default = "No answer")) %>%
+  #leave POL1 as numerical for now because it asks about level of interest
+  #leave ED as number because a higher number is more education 
+  mutate(Q10D = recode(Q10D, 
+                       "1" = "Good enough and can save from it", 
+                       "2" = "Good enough, no major problesm", 
+                       "3" = "Not enough", 
+                       "4" = "Not enough, having a hard time", 
+                       "88" = "Don't know", 
+                       "98" = "No answer", 
+                       .missing = "No answer", 
+                       .default = "No answer")) %>%
+  mutate(ETID = recode(ETID, 
+                       "1" = "White", 
+                       "2" = "Mestizo", 
+                       "3" = "Indigenous", 
+                       "4" = "Black", 
+                       "5" = "Mulatto", 
+                       "7" = "Other",
+                       "88" = "Don't know", 
+                       "98" = "No answer", 
+                       .missing = "No answer", 
+                       .default = "Other"))
+```
+
+After:
+
+```{r, comment=NA}
+#after recoding 
+data_edited %>%
+  head(10)
+```
+
+#### Renaming variables:
+
+The name of the variables were not intuitive for a person looking at the data set which can be problematic for manipulation because one always has to refer back to the codebook. Therefore, all of the variables were renamed. <br> Before:
+
+```{r, comment=NA}
+#col names before renaming
+colnames(data_edited)
+```
+
+After:
+
+```{r, comment=NA}
+#renaming
+data_edited <- data_edited %>%
+  rename(country = PAIS, 
+         year = YEAR, 
+         urban_rural = UR,
+         size_place = TAMANO, 
+         language_form = IDIOMAQ, 
+         left_right = L1,
+         sex = Q1, 
+         life_satisfaction = LS3, 
+         country_main_problem = A4, 
+         economy_compared_12 = SOCT2, 
+         personal_economy_12 = IDIO2, 
+         times_solving_community_problem_12 = CP5, 
+         demonstration_participation_12 = PROT3, 
+         military_takeover_crime = JC10, 
+         military_takeover_corruption = JC13, 
+         close_congress_difficult_times = JC15A, 
+         victim_crime_12 = VIC1EXT, 
+         times_victim_crime_12 = VIC1EXTA, 
+         household_victim_crime_12 = VIC1HOGAR, 
+         violence_neighborhoods_compared = PESE1, 
+         violece_neighborhood_12 = PESE2,
+         trust_judicial_punishment = AOJ12, 
+         respect_political_institutions = B2, 
+         pride_living_political_system = B4, 
+         should_suppot_political_system = B6, 
+         trust_justice_system = B10A, 
+         trust_armed_forces = B12, 
+         trust_national_congress = B13, 
+         trust_national_police = B18, 
+         trust_political_parties = B21, 
+         trust_president = B21A, 
+         trust_elections = B47A,
+         administration_combats_corruption = N9, 
+         administration_imp_safety = N11, 
+         administration_good_economy_mgm = N15, 
+         rate_president_performance = M1, 
+         satisf_road_streets_highw = SD2NEW2, 
+         satisf_public_schools = SD3NEW2, 
+         satisf_health_services = SD6NEW2, 
+         strong_pol_inequality = ROS4, 
+         democracy_better = ING4, 
+         aaff_should_combate_crime = MIL7, 
+         satisf_democracy_country = PN4, 
+         police_bribe_12 = EXC2, 
+         freq_corrup_public_off = EXC7, 
+         interest_politics = POL1, 
+         schooling_completed = ED, 
+         salary_satisf = Q10D, 
+         race_id = ETID)
+
+#col names after renaming
+colnames(data_edited)
+```
+
+#### Final subsetting:
+
+The variables in the data set spinned around the following topics:
+
+-   Big indicators: Economy, Education, Health
+
+-   Crime
+
+-   Corruption
+
+-   Democracy
+
+Variables not closely connected with the topics above were removed (with exception of demographic information: sex, country, race, etc.). Those variables were: **language_form** (irrelevant because over 95% of observations are "Spanish"), **times_solving_community_problem_12**, **demonstration_participation_12**, and **satisf_road_streets_highw** (low/none importance for topics above). Thus, the final data set had 29,780 observations and 45 variables. It is important to highlight that final data set means clean version of the original data to be used as starting point for the EDA, not that no further data manipulations were performed afterwards.
+
+```{r, comment=NA}
+#get rid of variables 
+data_final <- data_edited %>%
+  select(-c(language_form, 
+            times_solving_community_problem_12, 
+            demonstration_participation_12,
+            satisf_road_streets_highw))
+#str 
+str(data_final)
+
+```
+
+**Other:** For code and comments regarding the tidying data process, check the R script "Processing data."
+
+### Univariate Analysis
+
+Since there were 45 variables, univariate analysis was **not** performed in each one of them. The variables that seemed the most relevant/interesting were analyzed.
+
+#### Demographic Data
+
+The app below shows that, generally, the data set reflects:
+
+-   that both gender surveyed have an even representation.
+
+-   that more people from urban zones compared to rural zones were surveyed.
+
+-   that most of the people in the survey identify as "Mestizo" (mixed race: of Spanish and indigenous descent).
+
+```{r}
+#data
+data_uni_d <- read_csv("Data sets made in process/final")
+data_uni_d <- data_uni_d %>%
+    select(sex, race_id, urban_rural) %>%
+    mutate(race_id = if_else(race_id == "Other", 
+                             "No answer", 
+                             race_id))
+#app
+inputPanel(
+  shiny::selectInput(inputId = "variable", 
+                        label = "Select Variable:",
+                        choices = list("Race" = "race_id",
+                                       "Gender" = "sex",
+                                       "Urban Status" = "urban_rural"),
+                        selected = "sex")
+)
+
+#matching variables 
+variables <- c("Race" = "race_id",
+               "Gender" = "sex",
+               "Urban Status" = "urban_rural")
+
+```
+
+```{r}
+output$myplot <- renderPlot({
+        #getting x mapping 
+        the_var <- data_uni_d[[input$variable]]
+        variable_name <- names(variables)[variables == input$variable]
+        
+        #plot
+        ggplot(data = data_uni_d, 
+               mapping = aes(x = the_var, 
+                             fill = the_var)) +
+            geom_bar(position = position_dodge(), 
+                     color = "black") +
+            scale_fill_manual(values = c("#9E9E9E", "#973539", 
+                                         "#65A59D", "#613D76", 
+                                         "white","#1E4367")) +
+            labs(y = "Number of Observation in the Data Set",
+                 x = paste(variable_name, "of Observations"), 
+                 fill = variable_name, 
+                 title = paste(variable_name, "in the Data Set (2006 - 2014)"), 
+                 subtitle = "Aggregate data of all years") +
+            theme(plot.title = element_text(face = "bold"), 
+                  plot.subtitle = element_text(face = "bold"), 
+                  legend.position = "bottom") +
+            coord_flip()
+    })
+
+plotOutput("myplot", 
+           height = "450px", 
+           width = "700px")
+
+```
+
+Regarding schooling level, the plot below shows that:
+
+-   most of the people surveyed finished high school (10 - 12).
+
+-   there is also a relevant number of people who only finished elementary school (6).
+
+Because this a plot for univariate analysis, it cannot be determined whether this is the case for every country or throughout the years.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#data set 
+data_uni_num <- read_csv("Data sets made in process/final")
+
+#schooling accross years 
+ggplot(data = data_uni_num, 
+       mapping = aes(x = schooling_completed)) +
+  geom_histogram(binwidth = .5, 
+                 fill = "#1E4367") +
+  scale_x_continuous(breaks = seq(0, 18,2)) +
+  labs(x = "Schooling of Observations", 
+       y = "Number of Observations in the Data Set", 
+       title = "Schooling in the Data Set (2006 - 2014)", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"))
+
+```
+
+The plot is further explained by the summary statistics below that:
+
+-   the median schooling completed is 11 (high school).
+
+-   75% of people are within the schooling years from 6 to 13 (IQR).
+
+-   most people finished 11 schooling years.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#summary
+summary(data_uni_num$schooling_completed)
+
+#mode function
+Mode <- function(x) {
+  ux <- unique(x)
+  paste("Mode is", ux[which.max(tabulate(match(x, ux)))])
+}
+
+Mode(data_uni_num$schooling_completed)
+```
+
+#### Main Topics Data
+
+Because there were many variables that were not related to the demographics of the people surveyed, not all of them were subject of univariate analysis. A few variables were picked per topic outlined in the introduction (Big indicators: Economy, Education, Health / Crime / Corruption / Democracy) and were studied below.
+
+The variables picked per topic were:
+
+-   Big indicators: Economy, Education, Health:
+
+    -   country_main_problem: perception regarding the main problem the country is facing.
+
+    -   economy_compared_12: perception on whether the economy is better/worse/same than the previous year.
+
+    -   satisf_health_services: satisfaction with health services.
+
+    -   satisf_public_schools: satisfaction with the quality of education of public schools.
+
+-   Crime:
+
+    -   victim_crime_12: whether a person had been victim of crime during the past 12 months.
+
+    -   times_victim_crime_12: how many times a person had been victim of crime during the past 12 months.
+
+-   Corruption
+
+    -   freq_corrup_public_off: perception on how common corruption is among public officials.
+
+-   Democracy:
+
+    -   satisf_democracy_country: satisfaction with how democracy operates in their country.
+
+##### Big Indicators
+
+The tibbles and the bar chart below show that:
+
+-   most of the people surveyed consider that the main problem their country is facing is unemployment, followed by economics problems, crime, poverty, and corruption.
+
+-   electricity and human right violations had the smallest number of people who considered them to be the most relevant issues.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#country_main_problem (cat)
+
+#get the 5 highest categories, ignore "No answer"
+data_uni_num %>%
+  select(country_main_problem) %>%
+  group_by(country_main_problem) %>%
+  count() %>%
+  filter(n > 2000) %>%
+  arrange(desc(n))
+
+#get the lowest
+data_uni_num %>%
+  select(country_main_problem) %>%
+  group_by(country_main_problem) %>%
+  count() %>%
+  arrange(n) %>%
+  head(5)
+
+data_uni_num %>%
+  select(country_main_problem) %>%
+  group_by(country_main_problem) %>%
+  count() %>%
+  mutate(fill_country_main_problem = if_else(country_main_problem %in% c("Corruption", 
+                                                                      "Crime", 
+                                                                      "Economy (problems with)", 
+                                                                      "Poverty", 
+                                                                      "Unemployment"), 
+                                             TRUE, 
+                                             FALSE)) %>%
+  ggplot(mapping = aes(x = country_main_problem, 
+                       fill = fill_country_main_problem, 
+                       y = n)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c("#9E9E9E", "#973539")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_flip() +
+  labs(y = "Number of Observations in the Data Set",
+       x = "Perception about Countries' Main Problem",
+       title = "Public's Perception on the Main Problem their Country is Facing in the Data Set (2006 - 2014)", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"), 
+        axis.text.y = element_text(face = c('plain', 'plain', 'bold', 'plain',
+                                            'bold', 'plain', 'plain', 'plain',
+                                            'bold', 'plain', 'plain', 'plain',
+                                            'plain', 'plain', 'plain', 'plain',
+                                            'plain', 'plain', 'plain', 'plain',
+                                            'plain', 'plain', 'plain', 'plain',
+                                            'plain', 'plain', 'plain', 'plain',
+                                            'plain', 'bold', 'plain', 'plain',
+                                            'plain', 'plain', 'bold', 'plain',
+                                            'plain', 'plain'), 
+                                   color = c('grey30', 'grey30', '#973539', 'grey30',
+                                             '#973539', 'grey30', 'grey30', 'grey30',
+                                             '#973539', 'grey30', 'grey30', 'grey30',
+                                             'grey30', 'grey30', 'grey30', 'grey30',
+                                             'grey30', 'grey30', 'grey30', 'grey30',
+                                             'grey30', 'grey30', 'grey30', 'grey30',
+                                             'grey30', 'grey30', 'grey30', 'grey30',
+                                             'grey30', '#973539', 'grey30', 'grey30',
+                                             'grey30', 'grey30', '#973539', 'grey30',
+                                             'grey30', 'grey30')))
+
+```
+
+The app below shows that:
+
+-   most people believe that their country's economy is performing the same as in the past 12 months.
+
+-   more people believe that their country's economy is doing the worse in the past 12 months than better.
+
+-   there was a big absenteeism in response rate for the question regarding health services and public schools' quality of education.
+
+-   generally, most people are somewhat satisfied with the quality of education in public school. However, the table below provides deeper insight regarding this statement: it shows that when adding the number of people who are "very dissatisfied" and "dissatisfied," and comparing it against people who are "satisfied," the gap gets much smaller.
+
+    ```{r}
+    #wrangling data 
+    data_uni_num %>%
+      select(satisf_public_schools) %>%
+      group_by(satisf_public_schools) %>%
+      count() %>%
+      pivot_wider(names_from = satisf_public_schools, 
+                  values_from = n) %>%
+      clean_names() %>%
+      mutate(overall_dissatisfied = very_dissatisfied + dissatisfied, 
+             kind_of_satisfied = somewhat_satisfied) %>%
+      select(overall_dissatisfied, kind_of_satisfied)
+
+
+
+
+    ```
+
+-   by not much, more people are dissatisfied with health services in their countries than people who are somewhat satisfied. Similarly to quality of education, when making variables overall_dissatisfied ("dissatisfied" and "very dissatisfied") and overall_satisfied ("somewhat satisfied" and "very satisfied"), the quantity of people who are overall dissatisfied is still greater.
+
+    ```{r}
+    data_uni_num %>%
+      select(satisf_health_services) %>%
+      group_by(satisf_health_services) %>%
+      count() %>%
+      pivot_wider(names_from = satisf_health_services, 
+                  values_from = n) %>%
+      clean_names() %>%
+      mutate(overall_dissatisfied = very_dissatisfied + dissatisfied, 
+             overall_satisfied = somewhat_satisfied + very_satisfied) %>%
+      select(overall_dissatisfied, overall_satisfied)
+
+    ```
+
+```{r}
+#data
+data_uni_bt <- read_csv("Data sets made in process/final")
+data_uni_bt <- data_uni_bt %>%
+    mutate(economy_compared_12 = if_else(is.na(economy_compared_12), 
+                                         "No answer", 
+                                         economy_compared_12))
+
+#app
+inputPanel(
+  shiny::selectInput(inputId = "variable_2", 
+                        label = "Select Variable:",
+                        choices = list("Economy Perception" = "economy_compared_12",
+                                       "Satisfaction with Health Services" = "satisf_health_services", 
+                                       "Satisfaction with Education" = "satisf_public_schools"),
+                        selected = "satisf_public_schools")
+)
+
+#matching variables 
+variables_2 <- c("Main Problem" = "country_main_problem",
+               "Economy Perception" = "economy_compared_12",
+               "Satisfaction with Health Services" = "satisf_health_services", 
+               "Satisfaction with Education" = "satisf_public_schools")
+
+#output
+output$myplot_2 <- renderPlot({
+        #getting x mapping 
+        the_var_2 <- data_uni_bt[[input$variable_2]]
+        variable_name_2 <- names(variables_2)[variables_2 == input$variable_2]
+        
+        #plot
+        ggplot(data = data_uni_bt, 
+               mapping = aes(x = the_var_2, 
+                             fill = the_var_2)) +
+            geom_bar(position = position_dodge(), 
+                     color = "black", 
+                     show.legend = FALSE, 
+                     na.rm = TRUE) +
+            scale_fill_manual(values = c("#9E9E9E", "#973539", 
+                                         "#65A59D", "#613D76", 
+                                         "#1E4367")) +
+            labs(y = "Number of Observation in the Data Set",
+                 x = paste(variable_name_2, "of Observations"), 
+                 title = paste(variable_name_2, "in the Data Set (2006 - 2014)"), 
+                 subtitle = "Aggregate data of all years") +
+            theme(plot.title = element_text(face = "bold"), 
+                  plot.subtitle = element_text(face = "bold"), 
+                  legend.position = "bottom")
+    })
+
+plotOutput("myplot_2", 
+           height = "450px", 
+           width = "700px")
+
+
+```
+
+##### Crime
+
+The table below shows that 4482 people in the data set were victims of crime during the past 12 month from the time the survey was taken. This means that:
+
+-   15% of observations were victim of crime.
+
+```{r, comment=NA}
+#frequency table crime rate past 12 months 
+data_uni_num %>%
+  select(victim_crime_12) %>%
+  table()
+
+```
+
+Furthermore, out of the people who were victims of crimes, most of them reported that:
+
+-   during the past years, they were victims of crime 1 time.
+
+```{r, comment=NA}
+data_uni_num %>%
+  filter(victim_crime_12 == "Yes") %>%
+  select(times_victim_crime_12) %>%
+  summary()
+
+```
+
+The plots below show the same information graphically.
+
+```{r, comment=NA, fig.width=12, fig.height=6}
+#yes/no victim of crime 
+y_n_crime <- ggplot(data = data_uni_num, 
+       mapping = aes(x = victim_crime_12, 
+                     fill = victim_crime_12)) +
+  geom_bar(color = "black") +
+  scale_fill_manual(values = c("#1E4367", "#9E9E9E", 
+                               "#973539")) +
+  labs(y = "Number of Observations in the Data Set",
+       x = "Victim of Crime during the Past Year (Yes/No)",
+       fill = "Were you victim of crime \n during the past year?",
+       title = "Whether Someone was Victime of Crime during the Past Year in the Data Set (2006 - 2014)", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"), 
+        legend.position = "top")
+       
+#time crime 12 
+times_crime <- data_uni_num %>%
+  filter(victim_crime_12 == "Yes") %>%
+  select(times_victim_crime_12) %>%
+  ggplot(mapping = aes(x = times_victim_crime_12)) +
+  geom_density(fill = "#613D76", 
+               adjust = 5, 
+               alpha = 0.4) +
+  labs(y = "Density in the Data Set",
+       x = "Victim of Crime during the Past Year (times)", 
+       title = "Density Plot of the Times Someone was Victim of Crime \n During the Past Year in the Data Set (2006 - 2014)", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"))
+
+#together 
+y_n_crime + times_crime
+
+```
+
+##### Corruption
+
+The bar chart below shows that:
+
+-   most people think that corruption among public officials is very common.
+-   the perception on frequency of corruption among public officials and the number of people is in a positive relationship: higher frequency of perception = more people.
+
+```{r, fig.width=8, fig.height=6}
+#freq_corrup_public_off  
+data_uni_num %>%
+  select(freq_corrup_public_off) %>%
+  mutate(freq_corrup_public_off = factor(freq_corrup_public_off, 
+                                         levels = c("No answer", 
+                                                    "Very uncommon", 
+                                                    "Uncommon", 
+                                                    "Common", 
+                                                    "Very common"), 
+                                         ordered = TRUE)) %>%
+  ggplot(mapping = aes(x = freq_corrup_public_off, 
+                       fill = freq_corrup_public_off)) +
+  geom_bar(color = "black", 
+           show.legend = FALSE) +
+  scale_fill_manual(values = c("#9E9E9E", "#973539", 
+                               "#65A59D", "#613D76", 
+                               "#1E4367")) +
+  labs(y = "Number of Observations in the Data Set",
+       x = "\nFrequency of Corruption among Public Officials",
+       title = "Public's Perception of Frequency of Corruption \namong Public Officials in the Data Set (2006 - 2014)", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) +
+  coord_flip()
+
+```
+
+##### Democracy
+
+The bar chart below shows that:
+
+-   most people are either somewhat satisfied or dissatisfied with how democracy works in their country.
+-   there are more people who are ver dissatisfied with how democracy operates in their country than people who are very satisfied.
+
+```{r, fig.width=8, fig.height=6}
+#satisf_democracy_country 
+ggplot(data = data_uni_num, 
+       mapping = aes(x = satisf_democracy_country, 
+                     fill = satisf_democracy_country)) +
+  geom_bar(color = "black", 
+           show.legend = FALSE) +
+  scale_fill_manual(values = c("#9E9E9E", "#973539", 
+                               "#65A59D", "#613D76", 
+                               "#1E4367")) +
+  labs(y = "\nNumber of Observations in the Data Set",
+       x = "\nSatisfaction with Democracy in Country",
+       title = "Public's Satisfaction with Democracy in the Data Set (2006 - 2014)", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+
+```
+
+### Bivariate
+
+For the bivariate analysis, one variable was selected for each of the main topics and other variables were plotted against that main variable. The selected variables were:
+
+-   Big indicators: Economy, Education, Health:
+
+    -   country_main_problem: perception on what the main problem is that the country is facing.
+
+-   Crime
+
+    -   victim_crime_12 : whether a person had been victim of a crime during the past 12 months.
+
+-   Corruption
+
+    -   administration_combats_corruption: extent to which a person perceives the current administration combats corruption (0 - 7: a lot).
+
+-   Democracy
+
+    -   democracy_better: extent to which a person perceives that democracy is better than other forms of government (0 - 7: a lot).
+
+#### Big Indicators
+
+The plot below shows that:
+
+-   overall, most people considered economic problems and unemployment to be the main problems facing the country despite of race, since both are the columns with lighter colors across rows.
+
+-   the lightest square is the intersection of race: Black and Issue: unemployment. This means that black people are proportionally more worried about unemployment than any other race. The hypothesis is that this is a result of systemic racism which makes it harder for Black people to obtain jobs. Thus, this is their main worry.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+data_big_ind <- read_csv("Data sets made in process/final")
+
+main_problems <- data_big_ind %>%
+    select(country_main_problem) %>%
+    group_by(country_main_problem) %>%
+    count() %>%
+    arrange(desc(n)) %>%
+    head(14) %>%
+    filter(country_main_problem != "Other") %>%
+    filter(country_main_problem != "No answer") 
+
+problem_vec <- main_problems[, 1, drop = TRUE]
+
+data_big_ind <- data_big_ind %>%
+    filter(country_main_problem %in% problem_vec) 
+
+#data sets 
+race_ds <- data_big_ind %>%
+  group_by(country_main_problem, race_id) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(race_id) %>%
+  mutate(total = sum(n)) %>%
+  mutate(prop = n/total)
+
+
+country_ds <- data_big_ind %>%
+  group_by(country_main_problem, country) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(country) %>%
+  mutate(total = sum(n)) %>%
+  mutate(prop = n/total)
+
+schooling_ds <- data_big_ind %>%
+  group_by(country_main_problem, schooling_completed) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(schooling_completed) %>%
+  mutate(total = sum(n)) %>%
+  mutate(prop = n/total)
+
+#plots
+#race
+race_tile <- ggplot(data = race_ds, 
+       mapping = aes(x = country_main_problem,
+                     y = as_factor(race_id), 
+                     fill = prop)) +
+         geom_tile() +
+  labs(y = "Race of People Surveyed", 
+       x = "\nPerception about the Main Issue Facing the Country", 
+       title = "Breakdown of Main Issue Facing the Country by Race", 
+       fill = "Ratio from total", 
+       subtitle = "Aggregate data of all years") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = -15, 
+                                   hjust = 0), 
+        plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+
+#country
+country_tile <- ggplot(data = country_ds, 
+       mapping = aes(x = country_main_problem,
+                     y = as_factor(country), 
+                     fill = prop)) +
+  geom_tile() +
+  labs(y = "Country of People Surveyed", 
+       x = "\nPerception about the Main Issue Facing the Country", 
+       title = "Breakdown of Main Issue Facing the Country by Country", 
+       fill = "Ratio from total", 
+       subtitle = "Aggregate data of all years") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = -15, 
+                                   hjust = 0), 
+        plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+
+#schooling completed
+schooling_tile <- ggplot(data = schooling_ds, 
+       mapping = aes(x = country_main_problem,
+                     y = as_factor(schooling_completed), 
+                     fill = prop)) +
+  geom_tile() +
+  labs(y = "Education of People Surveyed", 
+       x = "\nPerception about the Main Issue Facing the Country", 
+       title = "Breakdown of Main Issue Facing the Country by Education Level", 
+       fill = "Ratio from total", 
+       subtitle = "Aggregate data of all years") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = -15, 
+                                   hjust = 0), 
+        plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+
+#output
+race_tile 
+
+```
+
+<br> The plot below shows that:
+
+-   the one issue that worries the greatest proportion of people in Colombia is Violence, while in Ecuador and Bolivia is the economy. In the case of Peru, it seems to be unemployment.
+
+-   even though there are common patterns when looking at particular issues across countries (e.g. economy), the graph is heterogeneous.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+country_tile
+
+```
+
+<br> The plot below shows that:
+
+-   the columns with the lighter colors are the ones that correspond to the economy, and unemployment. It means that, across all educational levels, people are highly worried about this issues.
+
+-   the column of poverty gets darker as the educational level increases. This mean that, at higher educational background, there is a smaller proportion of people worried about poverty. This makes sense given that they are at lower risk of losing jobs and, thereby, losing their income because their education makes them more employable.
+
+-   the column of corruption shows an opposite trend, at higher educational levels, it gets lighter. This means that there is a greater proportion of people with higher educational backgrounds worried about corruption compared to people with lower educational background. The hypothesis is that this follows from the fact that people with higher education have the privilege to have learned more about politics, so they have a broader understanding on how corruption can negatively impact a country and, therefore, are more worried about it.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+schooling_tile
+
+```
+
+<br>
+
+#### Crime
+
+The app below shows different groups within the people who answered "Yes" to have been victims of crime during the past year. The questions were the legend goes from 1 - 7 represent extent of agreement where 1 is "A little" and 7 is "A lot." Some highlights are that:
+
+-   most of the victims of crime were from Peru.
+
+-   most of the victims were male.
+
+-   the pie chart that shows the breakdown in years, only has 2010, 2012, and 2014 as options. Since the three years seemed to be in an even proportion, it is likely that crime incidents have remained about the same during that time period. Moreover, regarding the lack of presence of the years 2006, and 2008; the hypothesis was that the question was not included in the survey until 2010. The process to test the hypothesis is shown below. As it can be seen, for answer "Yes" and "No," the only years present were from 2010 to 2014. Even though both years appear in "No answer," it is likely that this was a NA result that became a "No answer" when recoding. Thus, the hypothesis is confirmed.
+
+    ```{r, comment = NA}
+    data_biv_crime <- read_csv("Data sets made in process/final")
+    data_biv_crime %>%
+      select(victim_crime_12, year) %>%
+      filter(victim_crime_12 == "Yes") %>%
+      table()
+    data_biv_crime %>%
+      select(victim_crime_12, year) %>%
+      filter(victim_crime_12 == "No") %>%
+      table()
+    data_biv_crime %>%
+      select(victim_crime_12, year) %>%
+      filter(victim_crime_12 == "No answer") %>%
+      table()
+
+    ```
+
+-   most of the victims have none to little trust that the justice system in their countries would punish the guilty. I think that this perception could also be shaped by past experiences where they were victims of crime and did not find justice for the event.
+
+-   about half of the people think that it is not justified for military to take over when crime is too high; however, most people think that AAFF (Armed Forces) should combat crime. This is interesting because it shows that even though people refuse that military forces to be in power (as in a military coup d'é·tat), they still think that it would be beneficial if they start taking on some of the national police's duties.
+
+-   about half of the people are in the lower end (1, 2, 3) of agreement regarding to what extent they trust the national police.
+
+```{r}
+#data
+data_biv_crime <- read_csv("Data sets made in process/final")
+data_biv_crime <- data_biv_crime %>%
+    filter(victim_crime_12 == "Yes") %>%
+    mutate(race_id = if_else(race_id == "Other", 
+                             "No answer", 
+                             race_id))
+#app
+inputPanel(
+  shiny::selectInput(inputId = "variable_3", 
+                        label = "Select Variable:",
+                        choices = list("Race" = "race_id",
+                                       "Country" = "country",
+                                       "Year" = "year", 
+                                       "Gender" = "sex", 
+                                       "Military Takeover to Combat Crime" = "military_takeover_crime",
+                                       "Trust Justice with Criminal Punishment" = "trust_judicial_punishment", 
+                                       "Trust National Police" = "trust_national_police", 
+                                       "Administration Imposes Safety" = "administration_imp_safety",
+                                       "AAFF should Combate Crime" = "aaff_should_combate_crime"),
+                        selected = "country")
+)
+
+#matching variables 
+variables_3 <- c("Race" = "race_id",
+                 "Country" = "country",
+                 "Year" = "year", 
+                 "Gender" = "sex", 
+                 "Military Takeover to Combat Crime" = "military_takeover_crime",
+                 "Trust Justice with Criminal Punishment" = "trust_judicial_punishment", 
+                 "Trust National Police" = "trust_national_police", 
+                 "Administration Imposes Safety" = "administration_imp_safety",
+                 "AAFF should Combate Crime" = "aaff_should_combate_crime")
+
+```
+
+```{r}
+output$myplot_3 <- renderPlot({
+        #getting x mapping 
+        the_var_3 <- data_biv_crime[[input$variable_3]]
+        variable_name_3 <- names(variables_3)[variables_3 == input$variable_3]
+        
+        #plot
+        ggplot(mapping = aes(x = "x", 
+                             fill = as.factor(the_var_3))) +
+            geom_bar() +
+            coord_polar("y") +
+            scale_fill_manual(values = c("#9E9E9E", "#973539", 
+                                         "#65A59D", "#613D76", 
+                                         "white", "#1E4367", 
+                                         "#B3782b")) +
+            labs(fill = variable_name_3, 
+                 title = "Breakdown of People who were Victims of Crime during the Past Year", 
+                 subtitle = "Aggregate data of all years") +
+          theme_minimal() +
+            theme(plot.title = element_text(face = "bold"), 
+                  plot.subtitle = element_text(face = "bold"), 
+                  axis.title = element_blank(), 
+                  axis.text = element_blank())
+        
+    })
+
+plotOutput("myplot_3", 
+           height = "450px", 
+           width = "900px")
+
+```
+
+#### Corruption
+
+The boxplot below shows that:
+
+-   As the perception on frequency of corruption among public officials increases, the median of the extent of agreement on whether the current administrations combats corruption decreases.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+data_corr <- read_csv("Data sets made in process/final")
+
+data_corr %>%
+  filter(freq_corrup_public_off != "No answer") %>%
+  mutate(freq_corrup_public_off = factor(freq_corrup_public_off, 
+                                            levels = c("Very uncommon", 
+                                                       "Uncommon", 
+                                                       "Common", 
+                                                       "Very common"))) %>%
+  ggplot(aes(x = administration_combats_corruption,
+             y = freq_corrup_public_off,
+             fill = freq_corrup_public_off)) +
+  geom_boxplot(alpha = 0.9,
+               show.legend = FALSE) +
+  scale_fill_manual(values = c("#973539",  "#65A59D",
+                               "#613D76", "#B3782b")) +
+  labs(x = "Extent of Agreement on whether the Current Administration\n Combats Corruption", 
+       y = "Perception of How Frequent is Corruption among Public Officials", 
+       title = "Perceptions regarding the Frequency of Corruption and Administration's\n Action Against It", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+
+```
+
+The graph below shows that the lightest squares are both the ones where two 7's intersect and where 1's intersect. This means that:
+
+-   Most of the people who trust political parties very little (1) highly disagree with the view that the current administration combats corruption (1).
+
+-   Most of the people who trust political parties a lot (7) highly agree with the view that the current administration combats corruption (7).
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#geom tile
+data_corr %>%
+  select(administration_combats_corruption, trust_political_parties ) %>%
+  mutate(administration_combats_corruption = as.factor(administration_combats_corruption), 
+         trust_political_parties = as.factor(trust_political_parties   )) %>%
+  group_by(administration_combats_corruption, trust_political_parties) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(trust_political_parties) %>%
+  mutate(total = sum(n)) %>%
+  mutate(prop = n/total) %>%
+  ggplot(mapping = aes(x = administration_combats_corruption,
+                       y = trust_political_parties   , 
+                       fill = prop)) +
+  geom_tile() +
+  labs(x = "Extent of Agreement on whether the Current Administration\n Combats Corruption", 
+       y = "Extent of Agreement on Trust to Political Parties",
+       title = "Perceptions regarding Trust to Political Parties and Administration's Action\nAgainst Corruption", 
+       subtitle = "Aggregate data of all years", 
+       fill = "Ration from total") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+
+```
+
+The hypothesis was that if a person perceives that the current administration is intentionally combating corruption, it increases their trust on political parties because they deemed them to be more honest. However, this hypothesis implied causation, which cannot be proved. However, correlation could be established and tested below. It was:
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+cor(data_corr$administration_combats_corruption, 
+    data_corr$trust_political_parties,
+    use = "complete.obs")
+
+```
+
+The boxplot below has a step-like shape. The main takeaways from this is that:
+
+-   The degree of respect for political institutions and the extent of agreement on whether the current administration combats corruption have a positive relationship.
+
+-   More respect for political institutions do not only correspond to a higher median of agreement on whether the current administration combats corruption, but also to a higher interquartile range (IQR). This means that 75% of observations in each group have a higher agreement on whether the current administration combats corruption compared to the 75% of observations of a group with a lower degree of respect for political institutions.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+data_corr %>% 
+  filter(!is.na(as.factor(respect_political_institutions))) %>%
+  ggplot(aes(x = administration_combats_corruption, 
+             y = as.factor(respect_political_institutions), 
+             fill = as.factor(respect_political_institutions))) +
+  geom_boxplot(show.legend = FALSE, 
+               alpha = 0.9) +
+  scale_fill_manual(values = c("#9E9E9E", "#973539", 
+                               "#65A59D", "#613D76", 
+                               "#B3782b", "#D0D0D0", "#6190A3")) +
+  labs(x = "Extent of Agreement on whether the Current Administration\n Combats Corruption",
+       y = "Degree of Respect to Political Institutions",
+       title = "Respect for Political Institutions and Perception on Administration's \nAction Against Corruption",
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+
+```
+
+Similarly to before, since causation cannot be tested, a correlation coefficient between both variables was calculated. The correlation was:
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+cor(data_corr$administration_combats_corruption, 
+    data_corr$respect_political_institutions,
+    use = "complete.obs")
+
+```
+
+#### Democracy
+
+The first plot is a map of the Andean Region showing the median and mean of agreement with the statement that democracy is better than other forms of government despite its issues. Before making the plot, it was needed to find both metrics per country and they are shown below.
+
+```{r, comment=NA}
+
+data_demo <- read_csv("Data sets made in process/final")
+
+#median
+data_demo %>%
+  dplyr::select(democracy_better, country) %>%
+  group_by(democracy_better, country) %>%
+  ungroup() %>%
+  group_by(country) %>%
+  mutate(median = median(democracy_better, na.rm = TRUE)) %>%
+  dplyr::select(-democracy_better) %>%
+  distinct()
+
+#mean
+data_demo %>%
+  select(democracy_better, country) %>%
+  group_by(democracy_better, country) %>%
+  ungroup() %>%
+  group_by(country) %>%
+  mutate(mean = mean(democracy_better, na.rm = TRUE)) %>%
+  select(-democracy_better) %>%
+  distinct()
+
+```
+
+The maps below show that:
+
+-   the country with the highest median and mean is Colombia. However, given that the other countries are less than one scale far from Colombia, this difference is not significant.
+
+-   all countries in the Andean community agree that democracy is the best form of government.
+
+```{r, comment=NA, fig.width=12, fig.height=6}
+#making map
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+#adding mean and median
+andean_region <- world %>%
+  dplyr::select(c(name, geometry)) %>%
+  filter(name %in% c("Peru", "Colombia", "Ecuador", "Bolivia")) %>%
+  mutate(median = c(5, 6, 5, 5)) %>%
+  mutate(mean = c(5.04, 5.28, 4.98, 4.74))
+
+#plots
+median <- ggplot(data = andean_region) +
+  geom_sf(aes(fill = median)) +
+  labs(title = "Median of Agreement that Democracy is Better than other Forms\nof Governement (1: least, 7: most)", 
+       subtitle = "Aggregate data of all years", 
+       fill = "Median") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"), 
+        axis.text = element_blank()) 
+
+mean <- ggplot(data = andean_region) +
+  geom_sf(aes(fill = mean)) +
+  labs(title = "Mean of Agreement that Democracy is Better than other Forms\nof Governement (1: least, 7: most)", 
+       subtitle = "Aggregate data of all years", 
+       fill = "Mean") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"), 
+        axis.text = element_blank()) 
+
+median + mean
+```
+
+The plot below shows that:
+
+-   the trend was almost the same despite salary: most people agreed that democracy is the best form of government.
+
+-   there was a slightly greater proportion of people in the group with the best salaries that think that democracy is the best form of government compared to other salaries. Nonetheless, the difference was not too significant.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+label_a <- c("Good enough and\ncan save from it", 
+             "Good", 
+             "No answer", 
+             "Not enough", 
+             "Having a hard time")
+data_demo %>%
+  select(salary_satisf, democracy_better) %>%
+  mutate(democracy_better = factor(democracy_better)) %>%
+  count(democracy_better, salary_satisf) %>%
+  group_by(salary_satisf) %>%
+  mutate(total = sum(n)) %>%
+  mutate(prop = n/total) %>%
+  ggplot(aes(x = democracy_better, 
+             y = salary_satisf)) +
+  geom_point(mapping = aes(size = prop), 
+             color = "#613D76") +
+  labs(y = "Salary", 
+       x = "Extent of Agreement that Democracy is Better\nthan other Forms of Government", 
+       title = "Salary and View on Democracy", 
+       size = "Ratio from total", 
+       subtitle = "Aggregate data of all years") +
+  scale_y_discrete(labels = label_a) +
+  coord_flip() +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold")) 
+```
+
+A similar plot was replicated for educational background; however, the visualization was difficult on the eyes and the trend was the same for all educational background: most people thought that democracy was better than other form of government. Yet, there was one interesting insight in the NA column. The plot below shows that:
+
+-   Out of all people who did not answer whether democracy was the best form of government, most of them were from lower educational backgrounds.
+
+The insight is very powerful because it shows that lack of a sufficient educational background restrict people from forming any opinions at all. This is concerning because it means that lack of educational do not only lead people to wrong stands, but to no stands at all. This is dangerous to democracy because it means that people with low education do not have the same decision power as their counterpart, which can negatively affect: political elections, referendums, etc.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+data_demo %>%
+  select(schooling_completed, democracy_better) %>%
+  mutate(democracy_better = factor(democracy_better)) %>%
+  mutate(schooling_completed = factor(schooling_completed)) %>%
+  count(democracy_better, schooling_completed) %>%
+  group_by(schooling_completed) %>%
+  mutate(total = sum(n)) %>%
+  mutate(prop = n/total) %>%
+  filter(is.na(democracy_better)) %>%
+  filter(!is.na(schooling_completed)) %>%
+  ggplot(aes(x = democracy_better, 
+             y = schooling_completed)) +
+  geom_point(mapping = aes(size = prop), 
+             color = "#613D76") +
+  labs(y = "\nEducation Completed", 
+       x = "Extent of Agreement that Democracy is Better\nthan other Forms of Government", 
+       size = "Ratio from total", 
+       title = "Education and View on Democracy", 
+       subtitle = "Aggregate data of all years") +
+  theme(plot.title = element_text(face = "bold"), 
+        plot.subtitle = element_text(face = "bold"))
+
+```
+
+### Space-Temporal Analysis
+
+Even though there are a few bivariate plots, most of the plots are multivariate to analyze how a variable "X" changes by country across years.
+
+#### Demographic Data
+
+##### Gender
+
+The bar plot below shows that over the years and across countries, the observations have been collected evenly from both genders considered in the survey. This is beneficial because it reduces gender bias when analyzing the data.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#bar chart
+data_final %>%
+  select(country, sex, year) %>%
+  group_by(country, sex, year) %>%
+  count() %>%
+  ggplot(mapping = aes(x = year, 
+                       y = n, 
+                       fill = sex)) +
+  geom_col(position = position_dodge(), 
+           width = 0.9, 
+           color = "black") +
+  facet_wrap(~country) +
+  scale_x_continuous(breaks = seq(2006, 2014, 2)) +
+  scale_fill_manual(values = c("#9E9E9E", "#973539")) +
+  labs(x = "Year of Data Collection", 
+       y = "Number of Observations Collected", 
+       title = "Gender of Data Collected", 
+       fill = "Gender") +
+  theme(plot.title = element_text(face = "bold"), 
+        legend.position = "bottom") 
+
+```
+
+##### Race
+
+The plots below showcase both similarities and differences regarding the race of the people surveyed. Similarities:
+
+-   In each country, the race proportions of people surveyed has remained about the same throughout the years.
+
+-   In all countries and years, the main race group was "Mestizo" (mixed race: of Spanish and indigenous descent).
+
+Differences: Most differences come from comparing across countries.
+
+-   Bolivia has very few observations coming from people who identify as black and Mulatto compared to other countries.
+
+-   Colombia has a much greater proportion of surveys coming from people who identify as white compared to other countries.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#horizontal bar chart
+data_final %>%
+  mutate(race_id = if_else(race_id == "Other", 
+                           "No answer", 
+                           race_id)) %>%
+  select(country, race_id, year) %>%
+  group_by(country, race_id, year) %>%
+  count() %>%
+  ggplot(mapping = aes(x = year, 
+                       y = n, 
+                       fill = race_id)) +
+  geom_col(#position = position_dodge(), 
+           width = 0.9, 
+           color = "black")+
+  facet_wrap(~country) +
+  scale_x_continuous(breaks = seq(2006, 2014, 2)) +
+  scale_fill_manual(values = c("#9E9E9E", "#973539", 
+                               "#65A59D", "#613D76", 
+                               "white","#1E4367")) +
+  coord_flip() +
+  labs(x = "Year of Data Collection", 
+       y = "Number of Observations Collected", 
+       title = "Race of Data Collected", 
+       fill = "Race:") +
+  theme(plot.title = element_text(face = "bold"), 
+        legend.position = "top") +
+  guides(fill = guide_legend(nrow = 1))  
+
+```
+
+##### School Level
+
+The histogram **(bivariate)** shows that across the years, most of the people surveyed culminated 11-12 schooling levels, meaning that they finished high school. Colombia an Ecuador have bimodal plots, where the modes are first at 5-6 (finished elementary school) and then at 11-12 schooling years (finished high school).
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#histogram 
+data_final %>%
+  select(country, schooling_completed, year) %>%
+  ggplot(mapping = aes(x = schooling_completed, 
+                       fill = country)) +
+  geom_histogram(binwidth = 1) +
+  scale_fill_manual(values = c("#1E4367", "#973539", 
+                               "#65A59D", "#613D76")) +
+  scale_x_continuous(breaks = seq(0, 18,2)) +
+  facet_wrap(~country) +
+  labs(x = "Level of Schooling Completed", 
+       y = "Number of Observations Collected", 
+       title = "Schooling of Data Collected", 
+       fill = "Country:") +
+  theme(plot.title = element_text(face = "bold"),
+        legend.position = "bottom")
+
+```
+
+Additionally, the tibble and scatterplot below show how the median schooling years have changed throughout the years in the Andean community.They show that Ecuador and Colombia have had a positive trend regarding schooling years, which can be explained by a greater emphasis on education given that they have a lot of people who had only finished elementary school (unlike Peru and Bolivia, whose distributions were more even).
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#metrics
+data_final %>%
+  select(country, schooling_completed, year) %>%
+  group_by(country, year) %>%
+  summarise(median(schooling_completed, na.rm = TRUE)) %>%
+  clean_names() %>%
+  rename(median = median_schooling_completed_na_rm_true) %>%
+  pivot_wider(names_from = year, 
+              values_from = median)
+
+#scatterplot
+scatter <- data_final %>%
+  select(country, schooling_completed, year) %>%
+  group_by(country, year) %>%
+  summarise(median(schooling_completed, na.rm = TRUE)) %>%
+  clean_names() %>%
+  rename(median = median_schooling_completed_na_rm_true) %>%
+  ungroup() %>%
+  pivot_wider(names_from = year, 
+              values_from = median) %>%
+  pivot_longer(cols = c("2006", "2008", "2010", "2012", "2014"), 
+               names_to = "year", 
+               values_to = "median") 
+
+ggplot(data = scatter, 
+       mapping = aes(x = as.numeric(year), 
+                     y = median, 
+                     color = country)) +
+  geom_line(size = 2) +
+  facet_wrap(~country) +
+  scale_color_manual(values = c("#1E4367", "#973539", 
+                               "#65A59D", "#613D76")) +
+  labs(x = "Year", 
+       y = "Median Schooling of Observations", 
+       title = "Schooling of Data Collected throughout the Years", 
+       color = "Country") +
+  theme(plot.title = element_text(face = "bold"))
+
+
+```
+
+##### Urban/Rural
+
+The bar plot below shows that across years and all countries in the Andean Community, most of the observations were recorded in urban areas. It can also be seen that as years passed by, fewer observations came from rural areas. This reflects the demographic change at a higher level in the countries. For example, in Peru, in 1990, the percentage of the population in rural zones was 29%. Nowadays, it is 21% (<http://cuentame.inegi.org.mx/poblacion/rur_urb.aspx?tema=P>).
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#bar chart 
+data_final %>%
+  select(country, urban_rural, year) %>%
+  group_by(country, urban_rural, year) %>%
+  count() %>%
+  ggplot(mapping = aes(x = year, 
+                       y = n, 
+                       fill = urban_rural)) +
+  geom_col(position = position_dodge(), 
+           width = 0.9, 
+           color = "black") +
+  facet_wrap(~country) +
+  scale_x_continuous(breaks = seq(2006, 2014, 2)) +
+  scale_fill_manual(values = c("#973539", "#9E9E9E")) +
+  labs(x = "Year of Data Collection", 
+       y = "Number of Observations Collected", 
+       title = "Urbanization Status of Data Collected", 
+       fill = "Urbanization Status: ") +
+  theme(plot.title = element_text(face = "bold"), 
+        legend.position = "bottom") 
+```
+
+#### Main Topics
+
+#### Big Indicators
+
+The plot below shows that:
+
+-   Across years and countries, most people thought that their personal economy has remained the same.
+
+-   In Peru and Ecuador, the number of people who thought that their personal economy was better compared to the past year had a positive trend throughout time. On the other hand, the number of people who think that thought personal economy was worse compared to the past year had a negative trend throughout time. This could hint towards an improvement in the economy of Peruvians and Ecuadorians.
+
+-   Bolivia showed the same trend from 2012 onward.
+
+-   In Colombia, from 2010 onward there were more people who perceived their economy to be better than the past year relatively to people who perceived it to be worse. There had been many fluctuations throughout time, so it was difficult to spot a trend.
+
+```{r, comment=NA, fig.width=8, fig.height=10}
+data_topics <- read_csv("Data sets made in process/final")
+
+#time series line
+data_topics %>%
+  select(country, year, personal_economy_12) %>% 
+  group_by(country, year, personal_economy_12) %>%
+  count() %>%
+  ggplot(mapping = aes(x = year, 
+                       y = n, 
+                       color = personal_economy_12)) +
+  geom_point(size = 2.5) +
+  geom_line(size = 1) +
+  scale_color_manual(values = c("#1E4367", "#973539", 
+                                "#65A59D", "#613D76")) +
+  facet_grid(country~.) +
+  labs(y = "Number of Observations", 
+       x = "Year", 
+       color = "Personal Economy:", 
+       title = "Personal Economy of Data Collected Relative to Past Year") +
+  theme(plot.title = element_text(face = "bold"), 
+        legend.position = "top") +
+  guides(fill = guide_legend(nrow = 1))  
+
+```
+
+#### Crime
+
+Given that the sample size for each combination of country and year was the same across the data set (done in the tidying data process), it is fair to say that the plot below shows that:
+
+-   In all countries but Colombia, there was an increasing number of people who consider crime to be the main issue facing the country throughout the years.
+
+-   Peruvians are more concerned of crime as the main issue facing the country than other nationalities in the Andean community.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#lollipop plot
+data_topics %>%
+  select(country, year, country_main_problem) %>%
+  filter(country_main_problem == "Crime") %>%
+  group_by(country, year, country_main_problem) %>%
+  count() %>%
+  ggplot(mapping = aes(x = year, 
+                       y = n)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = n),
+               color = "dark gray", lwd = 1) +
+  geom_point(mapping = aes(color = country), 
+             size = 4, 
+             show.legend = FALSE) +
+  facet_wrap(~country)  +
+  scale_y_continuous(expand = expansion(mult = c(0, .2))) +
+  theme_bw() +
+  labs(x = "\nYear", 
+       y = "Number of Observations", 
+       title = "Crime as the Main Problem the Country is Facing") +
+  theme(plot.title = element_text(face = "bold"))
+
+```
+
+#### Corruption
+
+The bar chart below shows that:
+
+-   Peru and Bolivia were the countries where bribe requests from the police were the most common within the Andean community.
+
+-   The number of bribe requests from the police remained about the same from 2006 to 2014.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#bar chart
+data_topics %>%
+  select(country, police_bribe_12, year) %>%
+  group_by(country, police_bribe_12, year) %>%
+  count() %>%
+  ggplot(mapping = aes(x = year, 
+                       y = n, 
+                       fill = police_bribe_12)) +
+  geom_col(position = position_dodge(), 
+           width = 0.9, 
+           color = "black") +
+  facet_wrap(~country) +
+  scale_x_continuous(breaks = seq(2006, 2014, 2)) +
+  #scale_fill_manual(values = c("#9E9E9E", "#973539")) +
+  labs(x = "\nYear of Data Collection", 
+       y = "Number of Observations Collected", 
+       title = "Police Bribe Requests During the Past Year in Data Collected", 
+       fill = "Request:") +
+  theme_bw() +
+  theme(plot.title = element_text(face = "bold"), 
+        legend.position = "bottom")
+
+```
+
+#### Democracy
+
+The density plots below show that:
+
+-   Colombia had the most right skewed plot throughout the years, which means that there were a greater proportion of people in Colombia with higher respect for political institutions relatively to the Andean community.
+
+-   Ecuador's density plots are becoming more right skewed throughout the years. This means that, as time passes by, the proportion of people with higher respect for political institutions is growing and the proportion of people with lower respect for political institutions is decreasing.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#density graph
+data_topics %>%
+  ggplot(aes(x = respect_political_institutions)) +
+  geom_density(fill = "#6190A3") +
+  facet_grid(country ~ year) +
+  labs(x = "\nDegree of Respect to Political Institutions", 
+       y = "Density", 
+       title = "Respect for Political Institutions in the Data Collected") +
+  theme(plot.title = element_text(face = "bold"))
+
+
+```
+
+### Multivariate Analysis
+
+The radial plots below show that:
+
+-   Most people are somewhat satisfied with the quality of education in public schools.
+
+-   Race did not appear to be a factor affecting people's satisfaction with the quality of education in public schools.
+
+-   Most of the people who are dissatisfied or very dissatisfied with the quality of education in public schools are those who-at least-went to high school. The hypothesis for this were:
+
+    -   this group of people had expectations regarding high school education that were not met.
+
+    -   some of this people went to private schools, so they have a better baseline to compare quality of education. Thus, they deemed it as low.
+
+    -   as people who most likely finished high school, they went through all the basic educational experience, so they had more instances to perceive the quality of education as bad.
+
+```{r, comment=NA, fig.width=12, fig.height=8}
+#data
+data_multi <- read_csv("Data sets made in process/final")
+
+#plot
+#schooling complete
+data_radar <- data_multi %>%
+  select(schooling_completed, satisf_public_schools) %>%
+  filter(satisf_public_schools != "No answer") %>%
+  group_by(schooling_completed, satisf_public_schools) %>%
+  mutate(schooling_completed = as.factor(schooling_completed)) %>%
+  count() %>%
+  ungroup() %>%
+  pivot_wider(names_from = schooling_completed, 
+              values_from = n) %>%
+  select(-"NA")
+
+radar_schooling <- data_radar %>%
+  mutate_each(funs(rescale), -satisf_public_schools) %>%
+  mutate(satisf_public_schools = factor(satisf_public_schools, 
+                                        levels = c("Very satisfied", 
+                                                   "Somewhat satisfied", 
+                                                   "Dissatisfied", 
+                                                   "Very dissatisfied"))) %>%
+  ggradar(group.point.size = 1.5, 
+          legend.position = "right", 
+          group.colours = c("#1E4367", "#973539", 
+                            "#65A59D", "#613D76"), 
+          group.line.width = .7, 
+          values.radar = c("", "", ""), 
+          plot.title = "Satisfaction with Public Education by\nSchool Level Completed") +
+  theme(plot.title = element_text(size = 15, 
+                                  face = "bold", 
+                                  family = "sans"), 
+        legend.position = "none") +
+  guides(color = guide_legend(ncol = 2))
+
+#plot 2
+data_radar_race <- data_multi %>%
+  select(race_id, satisf_public_schools) %>%
+  filter(satisf_public_schools != "No answer") %>%
+  filter(race_id != "No answer") %>%
+  filter(race_id != "Other") %>%
+  group_by(race_id, satisf_public_schools) %>%
+  count() %>%
+  ungroup() %>%
+  pivot_wider(names_from = race_id, 
+              values_from = n) 
+
+radar_race <- data_radar_race %>%
+  mutate_each(funs(rescale), -satisf_public_schools) %>%
+  mutate(satisf_public_schools = factor(satisf_public_schools, 
+                                        levels = c("Very satisfied", 
+                                                   "Somewhat satisfied", 
+                                                   "Dissatisfied", 
+                                                   "Very dissatisfied"))) %>%
+  ggradar(group.point.size = 1.5, 
+          legend.position = "right", 
+          group.colours = c("#1E4367", "#973539", 
+                            "#65A59D", "#613D76"), 
+          group.line.width = .7, 
+          values.radar = c("", "", ""), 
+          plot.title = "Satisfaction with Public Education\nby Race") +
+  theme(plot.title = element_text(size = 15, 
+                                  face = "bold", 
+                                  family = "sans"), 
+        legend.position = "bottom") +
+  guides(color = guide_legend(ncol = 2))
+
+#patch
+radar_schooling + radar_race
+
+
+```
+
+The animation below shows that:
+
+-   the degree of pride of living under the current political system was correlated with the degree of agreement on whether the current administration imposes safety.
+
+-   As time passed by, Ecuador has a positive trend on both views since their median agreement that the administration imposes safety and their median pride about living under the current political system increased.
+
+-   Colombia had the opposite trend: their median agreement that the administration imposes safety and their median pride about living under the current political system decreased over time.
+
+-   Peru and Bolivia's degree of agreement on whether the administration imposes safety fluctuated and did not show an explicit trend.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+
+
+data_multi %>%
+  select(year, 
+         country, 
+         administration_imp_safety, 
+         pride_living_political_system) %>% 
+  group_by(year, country) %>%
+  mutate(n_adm_imposes_safety = median(administration_imp_safety, na.rm = TRUE), 
+         n_pride_living_poli = median(pride_living_political_system, na.rm = TRUE)) %>%
+  ggplot(aes(x = n_adm_imposes_safety,
+             y = n_pride_living_poli, 
+             color = country)) +
+  scale_color_manual(values = c("#1E4367", "#973539", 
+                               "#65A59D", "#613D76")) +
+  geom_jitter() +
+  labs(x = "\n\nExtent of Agreement that the Current Administration Imposes Safety", 
+       y = "Pride of Living under the Current Political System\n\n", 
+       color = "Country") +
+  transition_time(year) + 
+  labs(title = "Year: {frame_time}")
+```
+
+The correlation plot below gave a large amount of information due to the many variables it hold. Some of the most interesting takeaways were:
+
+-   the rate of the president performance is strongly negative correlated with the trust to the president. Even though this is logical and obvious, the strength of the correlation made the statement stand out.
+
+-   any variable regarding the work that the current administration is performing in one area was strongly correlated to each other. For example, a person who thought that the administration did a good job combating corruption was likely to also think that the administration did a good job at imposing safety.
+
+```{r, comment=NA, fig.width=8, fig.height=6}
+#correlation
+data_multi_nu <- select_if(data_multi, is.numeric)  
+data_corr <- cor(data_multi_nu,
+         use = "complete.obs")
+
+#plot
+corrplot(data_corr,
+         method = "square",
+         tl.col = "black",
+         tl.cex = 0.8, 
+         tl.srt = 70)
+```
+
+## Conclusion
+
+Regarding the most important question of the study: **what is the main issue facing the country right now?**, most people in the Andean community were concerned with economic problems and unemployment, which is curious given that according to the data of the World Bank (<https://data.worldbank.org/indicator/NY.GDP.PCAP.CD?end=2014&locations=ZJ&start=2004>), GDP per capita increased and unemployment fell from 2006 - 2014. Added to the fact that, despite the gains in GDP per capita, most people perceived their personal economy to be the same (and in some cases, worse), these facts raise the question on whether macroeconomic gains such as GDP per capita are benefiting everyone in the system or only the higher classes/multinational corporations. Additionally, both race and education completed profiled themselves as the main demographic drivers of perceptions (or lack of) about issues in the Andean community. For example, black people are proportionally more concerned with unemployment and people with low educational backgrounds are more concerned with poverty, these findings shine concerns on what the systematic barriers that exclude less-privileged people from being active agents in the economy are, and what policies are needed to reverse this. Finally, crime is increasingly being considered as the most important problem facing the country throughout time, which is likely related to the fact that about 15% have been victims of crime during the past 12 months across the 8 years of the survey. Taking into account that perceptions regarding crime are correlated with perceptions regarding politics, the increasing number of people concerned about crime must be understood as an urgent call to action for politicians to address safety concerns in the Andean region. For further study, it would be relevant to expand this study to all the Latin American region to identify patterns across economic blocks/geographical locations/etc; and to find out to what extent people's perceptions are affected by the region they belong to.

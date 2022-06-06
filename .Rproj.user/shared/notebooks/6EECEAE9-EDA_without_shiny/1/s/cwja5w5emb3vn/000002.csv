@@ -1,0 +1,7 @@
+"0","cor(data_corr$administration_combats_corruption, "
+"0","    data_corr$trust_political_parties,"
+"0","    use = ""complete.obs"")"
+"1","[1]"
+"1"," 0.3043626"
+"1","
+"

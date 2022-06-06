@@ -1,0 +1,8 @@
+"0",""
+"0","#get the lowest"
+"0","data_uni_num %>%"
+"0","  select(country_main_problem) %>%"
+"0","  group_by(country_main_problem) %>%"
+"0","  count() %>%"
+"0","  arrange(n) %>%"
+"0","  head(5)"

@@ -1,0 +1,54 @@
+Code book:  Data sets made in process/final.csv
+
+General:
+	•	The data set has 29,244 observations and 45 variables. 
+	•	28 variables are characters and 17 are numeric.
+
+The variables are:
+	•	country: country where the person who was surveyed was from. 
+	•	year: year when the survey was taken.
+	•	urban_rural : whether the survey was taken in a rural or urban area. 
+	•	size_place: size of the place where the survey was taken. 
+	•	sex: sex of the person. 
+	•	life_satisfaction: how satisfied the interviewee is with their life. 
+	•	country_main_problem: most serious problem the country is facing. 
+	•	economy_compared_12: perception on whether the country's economy is better/same/worse than 12 months ago. 
+	•	personal_economy_12: perception on whether the person's economy is better/same/worse than 12 months ago. 
+	•	left_right: scale left to right for political parties. 
+	•	military_takeover_crime: views of military intervention when there is a lot of crime. 
+	•	military_takeover_corruption: views of military intervention when there is a lot of corruption. 
+	•	close_congress_difficult_times: views on closing congress given that the country is in a difficult time. 
+	•	victim_crime_12: whether the person has been victim of crime in the past year. 
+	•	times_victim_crime_12: how many times a person has been victim of crime during the past year.
+	•	household_victim_crime_12: whether the person's family has been victim of crime in the past year. 
+	•	violence_neighborhoods_compared: perception on level of violence in neighborhood compared to other neighborhoods.
+	•	violece_neighborhood_12: perception on level of violence in neighborhood compared to last year.
+	•	trust_judicial_punishment: trust on the justice system given that the person is victim of crime to punish the guilty.
+	•	respect_political_institutions: respect to political institutions in country. 
+	•	pride_living_political_system: pride of living under the current political system in country. 
+	•	should_suppot_political_system: whether the person should support the political system in country.
+	•	trust_justice_system: trust on the justice system. 
+	•	trust_armed_forces: trust on armed forces.
+	•	trust_national_congress: trust on national congress.
+	•	trust_national_police: trust on national police. 
+	•	trust_political_parties: trust on political parties.
+	•	trust_president: trust on president/prime minister.
+	•	trust_elections: trust in electoral process.
+	•	administration_combats_corruption: perception on how the current administration combats corruption. 
+	•	administration_imp_safety: perception on how the current administration improves safety
+	•	administration_good_economy_mgm: perception on how the current administration manages the economy well
+	•	rate_president_performance: rating the performance of current president
+	•	satisf_public_schools: satisfaction with the quality of public schools
+	•	satisf_health_services: satisfaction with the quality of public and health services
+	•	strong_pol_inequality: agreement with the statement that the government should implement policies to close the economic gap
+	•	democracy_better: agreement that democracy is the best form of government
+	•	aaff_should_combate_crime: perception about whether armed forces should participate in combating crime and violence
+	•	satisf_democracy_country: satisfaction level regarding how democracy works in their country
+	•	police_bribe_12: whether the police has asked for a bribe during the past year
+	•	freq_corrup_public_off: perception on how common is corruption among public officials 
+	•	interest_politics: level of interest in politics
+	•	schooling_completed: last year of education the person passed
+	•	salary_satisf: whether their salary and total household income is enough
+	•	race_id: self-identification race
+
+

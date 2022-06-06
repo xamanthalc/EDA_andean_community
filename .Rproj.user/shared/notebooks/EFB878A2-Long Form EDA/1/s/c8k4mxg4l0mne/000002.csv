@@ -1,0 +1,28 @@
+"0","#output
+output$myplot_2 <- renderPlot({
+        #getting x mapping 
+        the_var_2 <- data_uni_bt[[input$variable_2]]
+        variable_name_2 <- names(variables_2)[variables_2 == input$variable_2]
+        
+        #plot
+        ggplot(data = data_uni_bt, 
+               mapping = aes(x = the_var_2, 
+                             fill = the_var_2)) +
+            geom_bar(position = position_dodge(), 
+                     color = ""black"", 
+                     show.legend = FALSE, 
+                     na.rm = TRUE) +
+            scale_fill_manual(values = c(""#9E9E9E"", ""#973539"", 
+                                         ""#65A59D"", ""#613D76"", 
+                                         ""#1E4367"")) +
+            labs(y = ""Number of Observation in the Data Set"",
+                 x = paste(variable_name_2, ""of Observations""), 
+                 title = paste(variable_name_2, ""in the Data Set (2006 - 2014)""), 
+                 subtitle = ""Aggregate data of all years"") +
+            theme(plot.title = element_text(face = ""bold""), 
+                  plot.subtitle = element_text(face = ""bold""), 
+                  legend.position = ""bottom"")
+    })
+"
+"2","Error in output$myplot_2 <- renderPlot({ : object 'output' not found
+"

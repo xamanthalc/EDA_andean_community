@@ -1,0 +1,26 @@
+"0","#data set "
+"0","data_uni_num <- read_csv(""Data sets made in process/final"")"
+"1","[1mRows: [22m[34m29780[39m [1mColumns: [22m[34m45[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m─────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (22): country, urban_rural, sex, life_satisfaction, country_main_problem, economy_compared_12, personal_economy_12, military_...
+[32mdbl[39m (23): year, size_place, left_right, times_victim_crime_12, respect_political_institutions, pride_living_political_system, sho...
+"
+"1","
+[36mℹ[39m Use [38;5;235m[48;5;253m[38;5;235m[48;5;253m`spec()`[48;5;253m[38;5;235m[49m[39m to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set [38;5;235m[48;5;253m[38;5;235m[48;5;253m`show_col_types = FALSE`[48;5;253m[38;5;235m[49m[39m to quiet this message.
+"
+"0","#schooling accross years "
+"0","ggplot(data = data_uni_num, "
+"0","       mapping = aes(x = schooling_completed)) +"
+"0","  geom_histogram(binwidth = .5, "
+"0","                 fill = ""#1E4367"") +"
+"0","  scale_x_continuous(breaks = seq(0, 18,2)) +"
+"0","  labs(x = ""Schooling of Observations"", "
+"0","       y = ""Number of Observations in the Data Set"", "
+"0","       title = ""Schooling in the Data Set (2006 - 2014)"", "
+"0","       subtitle = ""Aggregate data of all years"") +"
+"0","  theme(plot.title = element_text(face = ""bold""), "
+"0","        plot.subtitle = element_text(face = ""bold""))"
+"0",""

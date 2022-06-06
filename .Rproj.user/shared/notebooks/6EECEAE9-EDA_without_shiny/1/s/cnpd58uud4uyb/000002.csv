@@ -1,0 +1,11 @@
+"0","#metrics"
+"0","data_final %>%"
+"0","  select(country, schooling_completed, year) %>%"
+"0","  group_by(country, year) %>%"
+"0","  summarise(median(schooling_completed, na.rm = TRUE)) %>%"
+"0","  clean_names() %>%"
+"0","  rename(median = median_schooling_completed_na_rm_true) %>%"
+"0","  pivot_wider(names_from = year, "
+"0","              values_from = median)"
+"1","`summarise()` has grouped output by 'country'. You can override using the `.groups` argument.
+"

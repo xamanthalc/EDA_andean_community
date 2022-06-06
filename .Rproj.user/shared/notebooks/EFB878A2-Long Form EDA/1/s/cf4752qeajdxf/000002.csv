@@ -1,0 +1,4 @@
+"0","#checking number of observation for country-year"
+"0","data_subset_2 %>%"
+"0","  group_by(PAIS, YEAR) %>%"
+"0","  count() "

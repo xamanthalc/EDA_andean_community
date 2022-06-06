@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<style>body{background-color:white;}</style>
+<link href="shared/selectize/css/selectize.bootstrap3.css" rel="stylesheet" />
+<script src="shared/selectize/js/selectize.min.js"></script>
+<script src="shared/selectize/accessibility/js/selectize-plugin-a11y.min.js"></script>
+
+</head>
+<body>
+<div class="shiny-input-panel">
+  <div class="shiny-flow-layout">
+    <div>
+      <div class="form-group shiny-input-container">
+        <label class="control-label" id="variable-label" for="variable">Select Variable:</label>
+        <div>
+          <select id="variable"><option value="race_id">Race</option>
+<option value="sex" selected>Gender</option>
+<option value="urban_rural">Urban Status</option></select>
+          <script type="application/json" data-for="variable" data-nonempty="">{"plugins":["selectize-plugin-a11y"]}</script>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
